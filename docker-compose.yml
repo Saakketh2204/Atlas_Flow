@@ -1,0 +1,59 @@
+version: "3.8"
+
+# Brings up AtlasFlow entirely locally: LocalStack standing in for
+# DynamoDB/SQS/SNS (so no AWS account or spend is required), one
+# control-plane instance (REST API + failure recovery engine), and worker
+# replicas (task execution). Both control-plane and worker run from the
+# SAME image -- only the SPRING_PROFILES_ACTIVE env var differs -- which
+# is what src/main/java/com/atlasflow/AtlasFlowApplication.java's Javadoc
+# describes as the two roles a single deployable can play.
+#
+# Usage:
+#   docker compose up --build
+#   docker compose up --build --scale worker=3   # multiple worker replicas
+#
+# Then, e.g.:
+#   curl -X POST localhost:8080/executions \
+#     -H 'Content-Type: application/json' \
+#     -d '{"workflowDefinitionId": "process-order-v1"}'
+#   curl localhost:8080/executions/<executionId>
+
+services:
+  localstack:
+    image: localstack/localstack:3.4
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=dynamodb,sqs,sns
+      - DEFAULT_REGION=us-east-1
+    volumes:
+      - ./infra/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  control-plane:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ATLASFLOW_AWS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - ATLASFLOW_AWS_REGION=us-east-1
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  worker:
+    build: .
+    environment:
+      - SPRING_PROFILES_ACTIVE=worker
+      - ATLASFLOW_AWS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - ATLASFLOW_AWS_REGION=us-east-1
+      # Uncomment to deterministically demo the retry-with-backoff path:
+      # - ATLASFLOW_CHAOS_FAIL_TASK_NAME=ReserveInventory
+      # - ATLASFLOW_CHAOS_FAIL_COUNT=2
+    depends_on:
+      localstack:
+        condition: service_healthy

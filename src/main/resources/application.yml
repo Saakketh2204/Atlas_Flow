@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: atlasflow
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+atlasflow:
+  executions-table: atlasflow-executions
+  tasks-table: atlasflow-tasks
+  idempotency-table: atlasflow-idempotency
+  task-queue-name: atlasflow-tasks
+  dead-letter-queue-name: atlasflow-tasks-dlq
+  aws-region: us-east-1
+  # Left unset here (real AWS) -- overridden to LocalStack's URL via the
+  # ATLASFLOW_AWS_ENDPOINT_OVERRIDE env var in docker-compose.yml.
+  aws-endpoint-override:
+  lease-duration: 30s
+  recovery-scan-interval: 10s
+  heartbeat-interval: 10s
+  retry-base-delay: 1s
+  retry-max-delay: 30s
+  retry-max-attempts: 5
+  scheduler-max-batch-size: 8
+  worker-poll-batch-size: 5
+  sqs-poll-wait-seconds: 10
+  # Deterministic chaos injection for demos -- leave chaos-fail-task-name
+  # unset (default) for normal operation. Example: set
+  # ATLASFLOW_CHAOS_FAIL_TASK_NAME=ReserveInventory and
+  # ATLASFLOW_CHAOS_FAIL_COUNT=2 to watch that task fail twice, retry with
+  # backoff, then succeed on its 3rd attempt.
+  chaos-fail-task-name:
+  chaos-fail-count: 0
+
+logging:
+  level:
+    com.atlasflow: INFO
+    software.amazon.awssdk: WARN
