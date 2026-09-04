@@ -43,13 +43,12 @@ to another worker, with no human ever paging in.
 
 ## Why this exists
 
-Built specifically to demonstrate the distributed-systems fundamentals
-that show up repeatedly across Amazon SDE1/SDE2 postings regardless of
-team (retail, AWS core services, fulfillment, fintech): partitioned,
-event-driven backend systems in Java, built on SQS/SNS/DynamoDB, with
-idempotent processing, retry/backoff, and automated failure recovery —
-see [`docs/architecture.md`](docs/architecture.md) for the full design
-rationale and what was deliberately left out of scope.
+Built to work through the distributed-systems fundamentals that come up
+constantly in production backend systems at scale: partitioned,
+event-driven architectures, idempotent processing under at-least-once
+delivery guarantees, retry/backoff strategies, and automated failure
+recovery — see [`docs/architecture.md`](docs/architecture.md) for the
+full design rationale and what was deliberately left out of scope.
 
 ## Architecture
 
